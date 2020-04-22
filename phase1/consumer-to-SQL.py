@@ -1,5 +1,18 @@
 from kafka import KafkaConsumer, TopicPartition
 from json import loads
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+class Transaction(Base):
+    __tablename__ = 'transaction'
+    id = Column(Integer, primary_key=True)
+    custid = Column(Integer)
+    type = Column(String(250), nullable=False)
+    date = Column(Integer)
+    amt = Column(Integer)
 
 class XactionConsumer:
     def __init__(self):
@@ -16,6 +29,10 @@ class XactionConsumer:
         # THE PROBLEM is every time we re-run the Consumer, ALL our customer
         # data gets lost!
         # add a way to connect to your database here.
+        self.engine = create_engine('mysql+pymysql://root:zipcoder@localhost/kafka_1')
+
+
+
 
         #Go back to the readme.
 
@@ -24,7 +41,11 @@ class XactionConsumer:
             message = message.value
             print('{} received'.format(message))
             self.ledger[message['custid']] = message
-            # add message to the transaction table in your SQL usinf SQLalchemy
+            message_sql = Transaction(custid=message['custid'], type=message['type'], date=message['date'], amt = message['amt'])
+            Session = sessionmaker(bind=self.engine)
+            session = Session()
+            session.add(message_sql)
+            session.commit()
             if message['custid'] not in self.custBalances:
                 self.custBalances[message['custid']] = 0
             if message['type'] == 'dep':
