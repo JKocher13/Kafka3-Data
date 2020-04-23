@@ -59,7 +59,7 @@ class XactionConsumer:
                 self.stats[message['custid']] = {"deposit_stdev": 0, "deposit_average": 0, "withdraw_stdev": 0, "withdraw_average":0}
             if message['type'] == 'dep':
                 self.custBalances[message['custid']] += message['amt']
-                lst = self.stand_dev_dep(message)
+                lst = self.log_list(message, "dep")
                 if len(lst) > 1:
                     stand_dev = statistics.stdev(lst)
                     self.stats[message['custid']]["deposit_stdev"]= stand_dev
@@ -67,7 +67,7 @@ class XactionConsumer:
                 self.stats[message['custid']]["deposit_average"]= average
             else:
                 self.custBalances[message['custid']] -= message['amt']
-                lst = self.stand_dev_wth(message)
+                lst = self.log_list(message,"wth")
                 if len(lst) > 1:
                     stand_dev = statistics.stdev(lst)
                     self.stats[message['custid']]["withdraw_stdev"]= stand_dev
@@ -76,11 +76,11 @@ class XactionConsumer:
             print(self.stats)
             #print(self.custBalances)
 
-    def stand_dev_dep(self,message):
+    def log_list(self,message, action_type):
         amounts = []
         for trans in self.log:
             if trans["custid"] == message["custid"]:
-                if trans["type"] == 'dep':
+                if trans["type"] == action_type:
                     amounts.append(trans['amt'])
         return amounts
 
